@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>易經卦象輸入與支卦顯示</title>
+  <!-- 增加響應式設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- 引入 Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
   <style>
@@ -12,6 +14,13 @@
     }
     h1, h2, h3 {
       text-align: center;
+    }
+    /* 提示訊息 */
+    .hint {
+      text-align: center;
+      font-size: 0.95em;
+      color: #555;
+      margin-bottom: 10px;
     }
     /* 今天時刻輸入區 */
     .time-input {
@@ -32,9 +41,10 @@
       font-size: 0.9em;
       color: #555;
     }
-    /* 外層容器：左右排列本卦與支卦 */
+    /* 外層容器：左右排列本卦與支卦，手機螢幕寬度不足時自動垂直排列 */
     .hexagrams-wrapper {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-around;
       align-items: flex-start;
       margin-top: 20px;
@@ -43,8 +53,10 @@
       padding: 10px;
       border: 1px solid #ccc;
       min-width: 320px;
+      flex: 1 1 320px;
+      margin: 10px;
     }
-    /* 共同爻容器，固定高度確保對齊 */
+    /* 共同爻容器 */
     .lines-container {
       display: flex;
       flex-direction: column-reverse;
@@ -79,14 +91,14 @@
       cursor: pointer;
       position: relative;
     }
-    /* 陽爻：一個實心長方形，比例 1:6 (例如 10px 高、60px 寬) */
+    /* 陽爻：實心長方形 */
     .yang-line {
       width: 60px;
       height: 10px;
       background-color: currentColor;
       margin-bottom: 2px;
     }
-    /* 陰爻：兩個實心長方形，比例 1:2 (例如 10px 高、20px 寬)，中間間隔 20px */
+    /* 陰爻：兩個實心長方形，中間間隔 */
     .yin-line-container {
       width: 60px;
       height: 10px;
@@ -100,7 +112,7 @@
       height: 10px;
       background-color: currentColor;
     }
-    /* 六親、世應、伏神顯示區 */
+    /* 六親、世應、伏神 */
     .liuQin-container {
       margin-left: 10px;
       font-size: 0.85em;
@@ -115,13 +127,24 @@
       font-size: 0.75em;
       color: #00a;
     }
+    /* 響應式調整：手機螢幕下文字縮小 */
+    @media screen and (max-width: 480px) {
+      body { margin: 10px; }
+      .hexagram { min-width: 280px; }
+      .line-label { width: 50px; font-size: 0.9em; }
+      .liuQin-container, .shiYing, .fuShen { font-size: 0.75em; }
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <h1>易經卦象輸入</h1>
+    <!-- 提示訊息 -->
+    <div class="hint">
+      提示：點選小圓圈可切換動爻狀態，點選爻線可切換陰陽狀態。
+    </div>
     
-    <!-- 今天時刻輸入區：採用下拉式選單 -->
+    <!-- 今天時刻輸入區 -->
     <div class="time-input">
       <h3>請輸入今天的時刻</h3>
       <!-- 年 -->
@@ -159,7 +182,6 @@
         <h2>本卦：{{ currentHexagram.name }}</h2>
         <p>本宮：{{ currentHexagram.benGong }}</p>
         <div class="lines-container">
-          <!-- 從下往上排列，每一爻包含：爻標、小圓圈、爻形狀（下方世應），右側顯示六親與伏神 -->
           <div v-for="(line, index) in lines" :key="index" class="line">
             <span class="line-label">第{{ index + 1 }}爻</span>
             <div :class="['circle', line.isMoving ? 'active' : '']" @click.stop="toggleMoving(index)"></div>
