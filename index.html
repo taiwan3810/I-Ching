@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>易經卦象輸入與支卦顯示</title>
-  <!-- 增加響應式設定 -->
+  <!-- 響應式設定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- 引入 Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
@@ -41,7 +41,7 @@
       font-size: 0.9em;
       color: #555;
     }
-    /* 外層容器：左右排列本卦與支卦，手機螢幕寬度不足時自動垂直排列 */
+    /* 外層容器 */
     .hexagrams-wrapper {
       display: flex;
       flex-wrap: wrap;
@@ -127,7 +127,7 @@
       font-size: 0.75em;
       color: #00a;
     }
-    /* 響應式調整：手機螢幕下文字縮小 */
+    /* 響應式調整 */
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
       .hexagram { min-width: 280px; }
@@ -143,11 +143,10 @@
     <div class="hint">
       提示：點選小圓圈可切換動爻狀態，點選爻線可切換陰陽狀態。
     </div>
-    
     <!-- 今天時刻輸入區 -->
     <div class="time-input">
-      <h3>請輸入今天的時刻</h3>
-      <!-- 年 -->
+      <h3>今天的時刻（自動計算）</h3>
+      <!-- 下拉選單依序填入年、月、日的天干及地支 -->
       <select v-model="today.yearTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -155,7 +154,6 @@
         <option v-for="branch in earthlyBranches" :value="branch">{{ branch }}</option>
       </select>
       <span>年</span>
-      <!-- 月 -->
       <select v-model="today.monthTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -163,7 +161,6 @@
         <option v-for="branch in earthlyBranches" :value="branch">{{ branch }}</option>
       </select>
       <span>月</span>
-      <!-- 日 -->
       <select v-model="today.dayTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -745,7 +742,50 @@
         },
         toggleMoving(index) {
           this.lines[index].isMoving = !this.lines[index].isMoving;
+        },
+        // 以下為根據日期計算干支的函式
+        getGanzhi(index) {
+          return this.heavenlyStems[index % 10] + this.earthlyBranches[index % 12];
+        },
+        getYearGanzhi(date) {
+          let index = (date.getFullYear() - 4) % 60;
+          return this.getGanzhi(index);
+        },
+        getMonthGanzhi(date) {
+          // 判斷當年立春（近似取2月4日）
+          let liChun;
+          if (date >= new Date(date.getFullYear(), 1, 4)) {
+            liChun = new Date(date.getFullYear(), 1, 4);
+          } else {
+            liChun = new Date(date.getFullYear() - 1, 1, 4);
+          }
+          let deltaDays = Math.floor((date - liChun) / (1000 * 3600 * 24));
+          let m = Math.floor(deltaDays / 30) + 1;
+          m = ((m - 1) % 12) + 1;
+          let yearStemIndex = (date.getFullYear() - 4) % 10;
+          let monthStemIndex = (yearStemIndex * 2 + m + 1) % 10;
+          let monthBranches = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'];
+          return this.heavenlyStems[monthStemIndex] + monthBranches[m - 1];
+        },
+        getDayGanzhi(date) {
+          let ref = new Date(1984, 0, 31);
+          let deltaDays = Math.floor((date - ref) / (1000 * 3600 * 24));
+          let index = deltaDays % 60;
+          return this.getGanzhi(index);
         }
+      },
+      mounted() {
+        // 計算今天的干支
+        let todayDate = new Date();
+        let yearGZ = this.getYearGanzhi(todayDate);
+        let monthGZ = this.getMonthGanzhi(todayDate);
+        let dayGZ = this.getDayGanzhi(todayDate);
+        this.today.yearTian = yearGZ.charAt(0);
+        this.today.yearDi = yearGZ.charAt(1);
+        this.today.monthTian = monthGZ.charAt(0);
+        this.today.monthDi = monthGZ.charAt(1);
+        this.today.dayTian = dayGZ.charAt(0);
+        this.today.dayDi = dayGZ.charAt(1);
       }
     });
   </script>
