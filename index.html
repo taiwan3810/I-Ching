@@ -36,14 +36,12 @@
       margin: 0 5px;
       font-weight: bold;
     }
-    .day-element {
+    .day-element, .kongwang {
       margin-top: 5px;
       font-size: 0.9em;
       color: #555;
     }
     .kongwang {
-      margin-top: 5px;
-      font-size: 0.9em;
       color: #007;
     }
     /* 外層容器 */
@@ -71,6 +69,14 @@
       align-items: center;
       margin: 5px 0;
       height: 50px;
+    }
+    /* 增加六獸標籤 */
+    .beast-label {
+      width: 60px;
+      text-align: left;
+      margin-right: 10px;
+      font-weight: bold;
+      color: #008;
     }
     .line-label {
       width: 60px;
@@ -132,7 +138,7 @@
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
       .hexagram { min-width: 280px; }
-      .line-label { width: 50px; font-size: 0.9em; }
+      .line-label, .beast-label { width: 50px; font-size: 0.9em; }
       .liuQin-container, .shiYing, .fuShen { font-size: 0.75em; }
     }
   </style>
@@ -187,6 +193,8 @@
         <p>本宮：{{ currentHexagram.benGong }}</p>
         <div class="lines-container">
           <div v-for="(line, index) in lines" :key="index" class="line">
+            <!-- 六獸顯示 -->
+            <span class="beast-label">{{ sixBeasts[index] }}</span>
             <span class="line-label">第{{ index + 1 }}爻</span>
             <div :class="['circle', line.isMoving ? 'active' : '']" @click.stop="toggleMoving(index)"></div>
             <div class="line-shape" @click="toggleLine(index)" :style="{ color: line.isMoving ? 'red' : 'black' }">
@@ -806,6 +814,25 @@
         dayKongWang() {
           const gz = this.today.dayTian + this.today.dayDi;
           return this.dayKongWangMap[gz] || "";
+        },
+        sixBeasts() {
+          let stem = this.today.dayTian;
+          if (!stem) return ["", "", "", "", "", ""];
+          if (stem === "甲" || stem === "乙") {
+            return ["青龍", "朱雀", "勾陳", "騰蛇", "白虎", "玄武"];
+          } else if (stem === "丙" || stem === "丁") {
+            return ["朱雀", "勾陳", "騰蛇", "白虎", "玄武", "青龍"];
+          } else if (stem === "戊") {
+            return ["勾陳", "騰蛇", "白虎", "玄武", "青龍", "朱雀"];
+          } else if (stem === "己") {
+            return ["騰蛇", "白虎", "玄武", "青龍", "朱雀", "勾陳"];
+          } else if (stem === "庚" || stem === "辛") {
+            return ["白虎", "玄武", "青龍", "朱雀", "勾陳", "騰蛇"];
+          } else if (stem === "壬" || stem === "癸") {
+            return ["玄武", "青龍", "朱雀", "勾陳", "騰蛇", "白虎"];
+          } else {
+            return ["", "", "", "", "", ""];
+          }
         }
       },
       methods: {
