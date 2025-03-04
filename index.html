@@ -37,12 +37,9 @@
       margin: 0 5px;
       font-weight: bold;
     }
-    .day-element, .kongwang {
+    .kongwang {
       margin-top: 5px;
       font-size: 0.9em;
-      color: #555;
-    }
-    .kongwang {
       color: #007;
     }
     /* 核對選項 */
@@ -164,13 +161,14 @@
       color: #333;
       white-space: nowrap;
     }
-    .shiYing {
-      font-size: 0.8em;
-      color: #a00;
-    }
     .fuShen {
       font-size: 0.75em;
       color: #00a;
+      margin-top: 2px;
+    }
+    .shiYing {
+      font-size: 0.8em;
+      color: #a00;
     }
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
@@ -215,14 +213,10 @@
         <option v-for="branch in earthlyBranches" :value="branch">{{ branch }}</option>
       </select>
       <span>日</span>
-      <div class="day-element" v-if="today.dayDi">
-        五行：{{ dayElement }}
-      </div>
+      <!-- 顯示空亡：月空亡在日空亡左邊 -->
       <div class="kongwang" v-if="today.dayDi">
-        日空亡：{{ dayKongWang }}
-      </div>
-      <div class="kongwang" v-if="today.monthDi && showMonthEmpty">
-        月空亡：{{ monthKongWang }}
+        <span v-if="today.monthDi && showMonthEmpty">月空亡：{{ monthKongWang }} </span>
+        <span>日空亡：{{ dayKongWang }}</span>
       </div>
     </div>
     
@@ -272,17 +266,22 @@
             <div class="liuQin-container" v-if="currentHexagram.liuQin && currentHexagram.liuQin[index]">
               {{ currentHexagram.liuQin[index] }}
             </div>
-            <!-- 顯示日空判定 -->
-            <span class="empty-label" v-if="getEmptyDescription(index)">{{ getEmptyDescription(index) }}</span>
-            <!-- 顯示月空判定 -->
-            <span class="month-empty-label" v-if="showMonthEmpty && getMonthEmptyDescription(index)">
-              {{ getMonthEmptyDescription(index) }}
-            </span>
-            <!-- 判定描述（沖／建及五行判定） -->
-            <span class="chongjian-label" v-if="getChongJian(index)">{{ getChongJian(index) }}</span>
+            <!-- 伏神顯示：移到六親下方 -->
             <div class="fuShen" v-if="currentHexagram.fuShen && currentHexagram.fuShen[index]">
               伏神：{{ currentHexagram.fuShen[index] }}
             </div>
+            <!-- 顯示月空判定在日空判定左側 -->
+            <span class="month-empty-label" v-if="showMonthEmpty && getMonthEmptyDescription(index)">
+              {{ getMonthEmptyDescription(index) }}
+            </span>
+            <!-- 顯示日空判定 -->
+            <span class="empty-label" v-if="getEmptyDescription(index)">
+              {{ getEmptyDescription(index) }}
+            </span>
+            <!-- 判定描述 -->
+            <span class="chongjian-label" v-if="getChongJian(index)">
+              {{ getChongJian(index) }}
+            </span>
           </div>
         </div>
       </div>
@@ -328,7 +327,7 @@
           "巳": "火", "午": "火", "未": "土", "申": "金", "酉": "金",
           "戌": "土", "亥": "水"
         },
-        // 日/月空亡對應表（合併後，兩者相同）
+        // 日/月空亡對應表（合併後）
         dayKongWangMap: {
           "甲子": "戌亥",
           "乙丑": "戌亥",
@@ -883,9 +882,6 @@
             name: "未知卦象", 
             benGong: "未知" 
           };
-        },
-        dayElement() {
-          return this.branchToElement[this.today.dayDi] || "";
         },
         dayKongWang() {
           const gz = this.today.dayTian + this.today.dayDi;
