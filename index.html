@@ -5,8 +5,9 @@
   <title>易經卦象輸入與支卦顯示</title>
   <!-- 響應式設定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 引入 Vue.js -->
+  <!-- 引入 Vue.js 與 html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -43,6 +44,23 @@
     }
     .kongwang {
       color: #007;
+    }
+    /* 核對選項 */
+    .options {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 0.9em;
+    }
+    .options label {
+      margin: 0 10px;
+    }
+    /* 按鈕 */
+    .btn-save {
+      display: block;
+      margin: 20px auto;
+      padding: 8px 16px;
+      font-size: 1em;
+      cursor: pointer;
     }
     /* 外層容器 */
     .hexagrams-wrapper {
@@ -121,17 +139,24 @@
       height: 10px;
       background-color: currentColor;
     }
-    /* 判定描述（沖／建及五行判定）顯示於六親右側 */
-    .chongjian-label {
-      margin-left: 10px;
-      font-size: 0.85em;
-      color: #990;
-    }
-    /* 新增：空亡判定描述 */
+    /* 判定描述：空亡與沖／建及五行判定 */
     .empty-label {
       margin-left: 10px;
       font-size: 0.85em;
       color: #f00;
+      display: block;
+    }
+    .month-empty-label {
+      margin-left: 10px;
+      font-size: 0.85em;
+      color: #f66;
+      display: block;
+    }
+    .chongjian-label {
+      margin-left: 10px;
+      font-size: 0.85em;
+      color: #990;
+      display: block;
     }
     .liuQin-container {
       margin-left: 10px;
@@ -150,7 +175,7 @@
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
       .hexagram { min-width: 280px; }
-      .line-label, .beast-label, .chongjian-label, .empty-label { width: 50px; font-size: 0.9em; }
+      .line-label, .beast-label, .chongjian-label, .empty-label, .month-empty-label { width: 50px; font-size: 0.9em; }
       .liuQin-container, .shiYing, .fuShen { font-size: 0.75em; }
     }
   </style>
@@ -196,7 +221,32 @@
       <div class="kongwang" v-if="today.dayDi">
         日空亡：{{ dayKongWang }}
       </div>
+      <div class="kongwang" v-if="today.monthDi && showMonthEmpty">
+        月空亡：{{ monthKongWang }}
+      </div>
     </div>
+    
+    <!-- 核對選項 -->
+    <div class="options">
+      <label>
+        <input type="checkbox" v-model="showMonthGround" /> 顯示月地支判定
+      </label>
+      <label>
+        <input type="checkbox" v-model="showDayGround" /> 顯示日地支判定
+      </label>
+      <label>
+        <input type="checkbox" v-model="showMonthFive" /> 顯示月五行判定
+      </label>
+      <label>
+        <input type="checkbox" v-model="showDayFive" /> 顯示日五行判定
+      </label>
+      <label>
+        <input type="checkbox" v-model="showMonthEmpty" /> 顯示月空亡判定
+      </label>
+    </div>
+    
+    <!-- 按鈕：轉成圖片 -->
+    <button class="btn-save" @click="saveImage">轉成圖片並下載</button>
     
     <div class="hexagrams-wrapper">
       <!-- 本卦區塊 -->
@@ -222,9 +272,13 @@
             <div class="liuQin-container" v-if="currentHexagram.liuQin && currentHexagram.liuQin[index]">
               {{ currentHexagram.liuQin[index] }}
             </div>
-            <!-- 新增：若該爻地支與日空亡吻合，顯示「日空」 -->
+            <!-- 顯示日空判定 -->
             <span class="empty-label" v-if="getEmptyDescription(index)">{{ getEmptyDescription(index) }}</span>
-            <!-- 判定描述顯示於六親右側 -->
+            <!-- 顯示月空判定 -->
+            <span class="month-empty-label" v-if="showMonthEmpty && getMonthEmptyDescription(index)">
+              {{ getMonthEmptyDescription(index) }}
+            </span>
+            <!-- 判定描述（沖／建及五行判定） -->
             <span class="chongjian-label" v-if="getChongJian(index)">{{ getChongJian(index) }}</span>
             <div class="fuShen" v-if="currentHexagram.fuShen && currentHexagram.fuShen[index]">
               伏神：{{ currentHexagram.fuShen[index] }}
@@ -274,7 +328,7 @@
           "巳": "火", "午": "火", "未": "土", "申": "金", "酉": "金",
           "戌": "土", "亥": "水"
         },
-        // 日空亡對應表
+        // 日/月空亡對應表（合併後，兩者相同）
         dayKongWangMap: {
           "甲子": "戌亥",
           "乙丑": "戌亥",
@@ -794,7 +848,13 @@
             shiYing: ["", "", "應", "", "", "世"],
             fuShen: ["", "", "", "", "", ""]
           }
-        }
+        },
+        // 核對選項預設
+        showMonthGround: true,
+        showDayGround: true,
+        showMonthFive: true,
+        showDayFive: true,
+        showMonthEmpty: true
       },
       computed: {
         currentPattern() {
@@ -831,7 +891,10 @@
           const gz = this.today.dayTian + this.today.dayDi;
           return this.dayKongWangMap[gz] || "";
         },
-        // 根據 today.dayTian 決定六獸的順序
+        monthKongWang() {
+          const gz = this.today.monthTian + this.today.monthDi;
+          return this.dayKongWangMap[gz] || "";
+        },
         sixBeasts() {
           let stem = this.today.dayTian;
           if (!stem) return ["", "", "", "", "", ""];
@@ -870,7 +933,6 @@
           };
           return opposites[branch] || "";
         },
-        // 五行生判定：例如「金」生「水」
         produces(x, y) {
           const produceMap = {
             "金": "水",
@@ -881,7 +943,6 @@
           };
           return produceMap[x] === y;
         },
-        // 五行剋判定：例如「金」剋「木」
         overcomes(x, y) {
           const overcomeMap = {
             "金": "木",
@@ -892,64 +953,72 @@
           };
           return overcomeMap[x] === y;
         },
-        // 判定描述：先比對日、月地支與爻的地支（取首字），再依五行判定
         getChongJian(index) {
           let liu = this.currentHexagram.liuQin[index] || "";
           if (!liu) return "";
           let lineBranch = liu.charAt(0);
-          let results = [];
+          let resultsGround = [];
+          let resultsFive = [];
           let dayBranch = this.today.dayDi;
           let monthBranch = this.today.monthDi;
           if (dayBranch) {
             if (this.getOpposite(dayBranch) === lineBranch) {
-              results.push("日沖");
+              if(this.showDayGround) resultsGround.push("日沖");
             } else if (dayBranch === lineBranch) {
-              results.push("日建");
+              if(this.showDayGround) resultsGround.push("日建");
             }
           }
           if (monthBranch) {
             if (this.getOpposite(monthBranch) === lineBranch) {
-              results.push("月沖");
+              if(this.showMonthGround) resultsGround.push("月沖");
             } else if (monthBranch === lineBranch) {
-              results.push("月建");
+              if(this.showMonthGround) resultsGround.push("月建");
             }
           }
-          // 五行判定
           let dayElem = this.branchToElement[dayBranch] || "";
           let monthElem = this.branchToElement[monthBranch] || "";
           let lineElem = this.branchToElement[lineBranch] || "";
           if (dayBranch) {
             if (dayElem === lineElem) {
-              results.push("日旺");
+              if(this.showDayFive) resultsFive.push("日旺");
             } else if (this.produces(dayElem, lineElem)) {
-              results.push("日相");
+              if(this.showDayFive) resultsFive.push("日相");
             } else if (this.produces(lineElem, dayElem)) {
-              results.push("日休");
+              if(this.showDayFive) resultsFive.push("日休");
             } else if (this.overcomes(dayElem, lineElem)) {
-              results.push("日囚");
+              if(this.showDayFive) resultsFive.push("日囚");
             }
           }
           if (monthBranch) {
             if (monthElem === lineElem) {
-              results.push("月旺");
+              if(this.showMonthFive) resultsFive.push("月旺");
             } else if (this.produces(monthElem, lineElem)) {
-              results.push("月相");
+              if(this.showMonthFive) resultsFive.push("月相");
             } else if (this.produces(lineElem, monthElem)) {
-              results.push("月休");
+              if(this.showMonthFive) resultsFive.push("月休");
             } else if (this.overcomes(monthElem, lineElem)) {
-              results.push("月囚");
+              if(this.showMonthFive) resultsFive.push("月囚");
             }
           }
-          return results.join("/");
+          return resultsGround.concat(resultsFive).join("/");
         },
-        // 新增：如果該爻地支與日空亡吻合，返回"日空"
         getEmptyDescription(index) {
           let liu = this.currentHexagram.liuQin[index] || "";
           if (!liu) return "";
           let lineBranch = liu.charAt(0);
-          let kong = this.dayKongWang; // 如 "戌亥"
+          let kong = this.dayKongWang;
           if (kong && kong.indexOf(lineBranch) !== -1) {
             return "日空";
+          }
+          return "";
+        },
+        getMonthEmptyDescription(index) {
+          let liu = this.currentHexagram.liuQin[index] || "";
+          if (!liu) return "";
+          let lineBranch = liu.charAt(0);
+          let kong = this.monthKongWang;
+          if (kong && kong.indexOf(lineBranch) !== -1) {
+            return "月空";
           }
           return "";
         },
@@ -980,6 +1049,14 @@
           let deltaDays = Math.floor((date - ref) / (1000 * 3600 * 24));
           let index = deltaDays % 60;
           return this.getGanzhi(index);
+        },
+        saveImage() {
+          html2canvas(document.querySelector("#app")).then(canvas => {
+            let link = document.createElement('a');
+            link.download = '易經卦象.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+          });
         }
       },
       mounted() {
