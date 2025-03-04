@@ -41,6 +41,11 @@
       font-size: 0.9em;
       color: #555;
     }
+    .kongwang {
+      margin-top: 5px;
+      font-size: 0.9em;
+      color: #007;
+    }
     /* 外層容器 */
     .hexagrams-wrapper {
       display: flex;
@@ -73,7 +78,7 @@
       margin-right: 10px;
       font-weight: bold;
     }
-    /* 小圓圈（動爻標記） */
+    /* 小圓圈 */
     .circle {
       width: 20px;
       height: 20px;
@@ -91,14 +96,12 @@
       cursor: pointer;
       position: relative;
     }
-    /* 陽爻：實心長方形 */
     .yang-line {
       width: 60px;
       height: 10px;
       background-color: currentColor;
       margin-bottom: 2px;
     }
-    /* 陰爻：兩個實心長方形，中間間隔 */
     .yin-line-container {
       width: 60px;
       height: 10px;
@@ -112,7 +115,6 @@
       height: 10px;
       background-color: currentColor;
     }
-    /* 六親、世應、伏神 */
     .liuQin-container {
       margin-left: 10px;
       font-size: 0.85em;
@@ -127,7 +129,6 @@
       font-size: 0.75em;
       color: #00a;
     }
-    /* 響應式調整 */
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
       .hexagram { min-width: 280px; }
@@ -143,10 +144,11 @@
     <div class="hint">
       提示：點選小圓圈可切換動爻狀態，點選爻線可切換陰陽狀態。
     </div>
+    
     <!-- 今天時刻輸入區 -->
     <div class="time-input">
       <h3>今天的時刻（自動計算）</h3>
-      <!-- 下拉選單依序填入年、月、日的天干及地支 -->
+      <!-- 年 -->
       <select v-model="today.yearTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -154,6 +156,7 @@
         <option v-for="branch in earthlyBranches" :value="branch">{{ branch }}</option>
       </select>
       <span>年</span>
+      <!-- 月 -->
       <select v-model="today.monthTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -161,6 +164,7 @@
         <option v-for="branch in earthlyBranches" :value="branch">{{ branch }}</option>
       </select>
       <span>月</span>
+      <!-- 日 -->
       <select v-model="today.dayTian">
         <option v-for="stem in heavenlyStems" :value="stem">{{ stem }}</option>
       </select>
@@ -170,6 +174,9 @@
       <span>日</span>
       <div class="day-element" v-if="today.dayDi">
         五行：{{ dayElement }}
+      </div>
+      <div class="kongwang" v-if="today.dayDi">
+        日空亡：{{ dayKongWang }}
       </div>
     </div>
     
@@ -242,6 +249,69 @@
           "子": "水", "丑": "土", "寅": "木", "卯": "木", "辰": "土",
           "巳": "火", "午": "火", "未": "土", "申": "金", "酉": "金",
           "戌": "土", "亥": "水"
+        },
+        // 日空亡對應表
+        dayKongWangMap: {
+          "甲子": "戌亥",
+          "乙丑": "戌亥",
+          "丙寅": "戌亥",
+          "丁卯": "戌亥",
+          "戊辰": "戌亥",
+          "己巳": "戌亥",
+          "庚午": "戌亥",
+          "辛未": "戌亥",
+          "壬申": "戌亥",
+          "葵酉": "戌亥",
+          "甲戌": "申酉",
+          "乙亥": "申酉",
+          "丙子": "申酉",
+          "丁丑": "申酉",
+          "戊寅": "申酉",
+          "己卯": "申酉",
+          "庚辰": "申酉",
+          "辛巳": "申酉",
+          "壬午": "申酉",
+          "葵未": "申酉",
+          "甲申": "午未",
+          "乙酉": "午未",
+          "丙戌": "午未",
+          "丁亥": "午未",
+          "戊子": "午未",
+          "己丑": "午未",
+          "庚寅": "午未",
+          "辛卯": "午未",
+          "壬辰": "午未",
+          "葵巳": "午未",
+          "甲午": "辰巳",
+          "乙未": "辰巳",
+          "丙申": "辰巳",
+          "丁酉": "辰巳",
+          "戊戌": "辰巳",
+          "己亥": "辰巳",
+          "庚子": "辰巳",
+          "辛丑": "辰巳",
+          "壬寅": "辰巳",
+          "葵卯": "辰巳",
+          "甲辰": "寅卯",
+          "乙巳": "寅卯",
+          "丙午": "寅卯",
+          "丁未": "寅卯",
+          "戊申": "寅卯",
+          "己酉": "寅卯",
+          "庚戌": "寅卯",
+          "辛亥": "寅卯",
+          "壬子": "寅卯",
+          "葵丑": "寅卯",
+          "甲寅": "子丑",
+          "乙卯": "子丑",
+          "丙辰": "子丑",
+          "丁巳": "子丑",
+          "戊午": "子丑",
+          "己未": "子丑",
+          "庚申": "子丑",
+          "辛酉": "子丑",
+          "壬戌": "子丑",
+          "葵亥": "子丑"
         },
         lines: [
           { isYang: true, isMoving: false },
@@ -716,12 +786,10 @@
           };
         },
         supportLines() {
-          return this.lines.map(line => {
-            return { 
-              isYang: line.isMoving ? !line.isYang : line.isYang,
-              isMoving: line.isMoving
-            };
-          });
+          return this.lines.map(line => ({
+            isYang: line.isMoving ? !line.isYang : line.isYang,
+            isMoving: line.isMoving
+          }));
         },
         supportPattern() {
           return this.supportLines.map(line => line.isYang ? "1" : "0").join('');
@@ -734,6 +802,10 @@
         },
         dayElement() {
           return this.branchToElement[this.today.dayDi] || "";
+        },
+        dayKongWang() {
+          const gz = this.today.dayTian + this.today.dayDi;
+          return this.dayKongWangMap[gz] || "";
         }
       },
       methods: {
@@ -743,7 +815,6 @@
         toggleMoving(index) {
           this.lines[index].isMoving = !this.lines[index].isMoving;
         },
-        // 以下為根據日期計算干支的函式
         getGanzhi(index) {
           return this.heavenlyStems[index % 10] + this.earthlyBranches[index % 12];
         },
@@ -752,7 +823,6 @@
           return this.getGanzhi(index);
         },
         getMonthGanzhi(date) {
-          // 判斷當年立春（近似取2月4日）
           let liChun;
           if (date >= new Date(date.getFullYear(), 1, 4)) {
             liChun = new Date(date.getFullYear(), 1, 4);
@@ -775,7 +845,6 @@
         }
       },
       mounted() {
-        // 計算今天的干支
         let todayDate = new Date();
         let yearGZ = this.getYearGanzhi(todayDate);
         let monthGZ = this.getMonthGanzhi(todayDate);
