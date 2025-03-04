@@ -127,6 +127,12 @@
       font-size: 0.85em;
       color: #990;
     }
+    /* 新增：空亡判定描述 */
+    .empty-label {
+      margin-left: 10px;
+      font-size: 0.85em;
+      color: #f00;
+    }
     .liuQin-container {
       margin-left: 10px;
       font-size: 0.85em;
@@ -144,7 +150,7 @@
     @media screen and (max-width: 480px) {
       body { margin: 10px; }
       .hexagram { min-width: 280px; }
-      .line-label, .beast-label, .chongjian-label { width: 50px; font-size: 0.9em; }
+      .line-label, .beast-label, .chongjian-label, .empty-label { width: 50px; font-size: 0.9em; }
       .liuQin-container, .shiYing, .fuShen { font-size: 0.75em; }
     }
   </style>
@@ -216,6 +222,8 @@
             <div class="liuQin-container" v-if="currentHexagram.liuQin && currentHexagram.liuQin[index]">
               {{ currentHexagram.liuQin[index] }}
             </div>
+            <!-- 新增：若該爻地支與日空亡吻合，顯示「日空」 -->
+            <span class="empty-label" v-if="getEmptyDescription(index)">{{ getEmptyDescription(index) }}</span>
             <!-- 判定描述顯示於六親右側 -->
             <span class="chongjian-label" v-if="getChongJian(index)">{{ getChongJian(index) }}</span>
             <div class="fuShen" v-if="currentHexagram.fuShen && currentHexagram.fuShen[index]">
@@ -884,11 +892,10 @@
           };
           return overcomeMap[x] === y;
         },
-        // 判定描述：先比對日、月地支與爻的地支（以六親描述首字），然後再依五行判定
+        // 判定描述：先比對日、月地支與爻的地支（取首字），再依五行判定
         getChongJian(index) {
           let liu = this.currentHexagram.liuQin[index] || "";
           if (!liu) return "";
-          // 取六親描述第一個字作為該爻的地支
           let lineBranch = liu.charAt(0);
           let results = [];
           let dayBranch = this.today.dayDi;
@@ -934,6 +941,17 @@
             }
           }
           return results.join("/");
+        },
+        // 新增：如果該爻地支與日空亡吻合，返回"日空"
+        getEmptyDescription(index) {
+          let liu = this.currentHexagram.liuQin[index] || "";
+          if (!liu) return "";
+          let lineBranch = liu.charAt(0);
+          let kong = this.dayKongWang; // 如 "戌亥"
+          if (kong && kong.indexOf(lineBranch) !== -1) {
+            return "日空";
+          }
+          return "";
         },
         getGanzhi(index) {
           return this.heavenlyStems[index % 10] + this.earthlyBranches[index % 12];
